@@ -1,0 +1,12 @@
+# Explicit allowlist: data, figures, results, manuscripts, and local settings stay out.
+*
+!/.gitignore
+!/README.md
+!/config.R
+!/run_analysis.R
+!/transaction_analysis.R
+!/debt_trajectories.R
+!/weekly_analysis.R
+!/validate_results.R
+!/make_exhibits.R
+!/self_test.R
