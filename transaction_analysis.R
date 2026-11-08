@@ -59,6 +59,10 @@ transaction_analysis <- function(con, output) {
     sum(least(b,r)) tx_overlap,least(sum(b),sum(r))-sum(least(b,r)) additional_cross_tx_overlap,
     greatest(sum(b)-sum(r),0) positive_net_day_draw FROM alltx GROUP BY 1,2 HAVING sum(b)>0")
   assert_sql(con, "SELECT min(additional_cross_tx_overlap)>-0.01 AND max(abs(gross_b-tx_overlap-additional_cross_tx_overlap-positive_net_day_draw))<0.01 FROM daycalc", "Daily identity failed.")
+  save_result(output, "aggregate_daily_flows", query(con, "SELECT count(*) accountdays,
+    sum(gross_b) gross_borrow_usd,sum(tx_overlap)/sum(gross_b) same_tx_offset_fraction,
+    sum(additional_cross_tx_overlap)/sum(gross_b) extra_daily_offset_fraction,
+    sum(positive_net_day_draw)/sum(gross_b) positive_net_day_draw_fraction FROM daycalc"))
   execute(con, "CREATE TEMP TABLE activity_bins AS WITH w AS (
     SELECT wallet,CAST(week_start AS DATE) week_start,count(*) n FROM e GROUP BY 1,2), a AS (
     SELECT *,coalesce(sum(n) OVER(PARTITION BY wallet ORDER BY week_start RANGE BETWEEN INTERVAL 28 DAY PRECEDING AND INTERVAL 1 DAY PRECEDING),0) prior_n FROM w)

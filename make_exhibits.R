@@ -17,7 +17,11 @@ make_exhibits <- function(output) {
     c(names[i], format(d$accountdays[1], big.mark = ",", scientific = FALSE, trim = TRUE), percent(d$net_expansion_day_fraction))
   })
   write_rows("all_trajectory_rows", rows)
-  write_rows("debt_trajectory_rows", rows[-1])
+  write_rows("debt_trajectory_rows", rows)
+  # Group weights refer to the common frequency-eligible flow sample.
+  freq$gross_borrow_share <- freq$gross_borrow_usd / sum(freq$gross_borrow_usd)
+  freq$accountday_share <- freq$accountdays / sum(freq$accountdays)
+  save_result(output, "frequency_group_weights", freq)
   a <- read_result("same_transaction_summary")
   e <- read_result("same_transaction_exclude_top10")
   fields <- c("offset_fraction", "same_asset_offset_fraction", "cross_asset_offset_fraction", "positive_net_draw_fraction")
@@ -37,18 +41,18 @@ make_exhibits <- function(output) {
   }
   write_rows("frequency_robustness_rows", rows)
 
-  d <- freq[match(groups[-1], freq$frequency_group), ]
+  d <- freq[match(groups, freq$frequency_group), ]
   values <- as.matrix(d[c("same_tx_offset_fraction", "extra_daily_offset_fraction", "positive_net_day_draw_fraction")]) * 100
   colors <- c("#D5A65F", "#B9CDD7", "#216775")
   # Base R's PDF device uses vector shapes and standard Helvetica fonts.
-  grDevices::pdf(file.path(output, "Figure_1.pdf"), width = 7, height = 3.15,
+  grDevices::pdf(file.path(output, "Figure_1.pdf"), width = 7, height = 3.7,
     family = "Helvetica", useDingbats = FALSE, title = "Decomposition of gross borrowing")
   on.exit(grDevices::dev.off(), add = TRUE)
   par(mar = c(3.2, 5, 2.6, 0.7), mgp = c(1.8, 0.5, 0), tcl = -0.2, las = 1, cex = 0.9)
-  plot(NA, xlim = c(0, 100), ylim = c(0.5, 3.5), xaxs = "i", yaxs = "i",
+  plot(NA, xlim = c(0, 100), ylim = c(0.5, 4.5), xaxs = "i", yaxs = "i",
     axes = FALSE, xlab = "Share of gross borrowing (%)", ylab = "")
-  for (i in 1:3) {
-    y <- 4 - i
+  for (i in 1:4) {
+    y <- 5 - i
     edges <- c(0, cumsum(values[i, ]))
     for (j in 1:3) {
       rect(edges[j], y - 0.3, edges[j + 1], y + 0.3, col = colors[j], border = NA)
@@ -57,7 +61,7 @@ make_exhibits <- function(output) {
     }
   }
   axis(1, at = seq(0, 100, 25))
-  axis(2, at = 3:1, labels = c("1-2 draws", "3-9 draws", "10+ draws"), tick = FALSE)
+  axis(2, at = 4:1, labels = c("0 draws", "1-2 draws", "3-9 draws", "10+ draws"), tick = FALSE)
   legend("top", inset = c(0, -0.24), xpd = NA, bty = "n", horiz = TRUE,
     legend = c("Within transaction", "Additional within day", "Positive daily net borrowing"),
     fill = colors, border = NA, cex = 0.77)

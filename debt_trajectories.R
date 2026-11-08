@@ -25,4 +25,11 @@ debt_trajectories <- function(con, output) {
     avg((abs(delta)<=tolerance)::INTEGER) near_baseline_day_fraction
     FROM traj t JOIN activity_bins a ON t.wallet=a.wallet
     AND CAST(date_trunc('week',t.reference_date) AS DATE)=a.week_start GROUP BY 1,2 ORDER BY 1,2"))
+  save_result(output, "trajectory_frequency_sample_flow", query(con, "SELECT
+    count(*) balanced_accountdays,count(*) FILTER(WHERE a.wallet IS NOT NULL) frequency_eligible_accountdays,
+    count(*) FILTER(WHERE a.wallet IS NULL) outside_frequency_window,
+    min(t.reference_date) FILTER(WHERE a.wallet IS NULL) excluded_first_date,
+    max(t.reference_date) FILTER(WHERE a.wallet IS NULL) excluded_last_date
+    FROM traj t LEFT JOIN activity_bins a ON t.wallet=a.wallet
+    AND CAST(date_trunc('week',t.reference_date) AS DATE)=a.week_start WHERE horizon_days=0"))
 }
